@@ -1,16 +1,19 @@
 import { ApolloServer } from "@apollo/server";
 import { startStandaloneServer } from "@apollo/server/standalone";
+import { GraphQLFileLoader } from "@graphql-tools/graphql-file-loader";
+import { loadSchemaSync } from "@graphql-tools/load";
+import { addResolversToSchema } from "@graphql-tools/schema";
+import path from "path";
+import { fileURLToPath } from "url";
 
-const typeDefs = `
-type Book {
-  title: String
-  author: String
-}
-
-type Query {
-  books: [Book]
-}
-`;
+const dirName = path.dirname(fileURLToPath(import.meta.url));
+const schemaPath = path.normalize(
+  path.join(dirName + "/../src/schema.graphql")
+);
+console.log(`load schema from ${schemaPath}`);
+const schema = loadSchemaSync(schemaPath, {
+  loaders: [new GraphQLFileLoader()],
+});
 
 const books = [
   {
@@ -30,8 +33,7 @@ const resolvers = {
 };
 
 const server = new ApolloServer({
-  typeDefs,
-  resolvers,
+  schema: addResolversToSchema({ schema, resolvers }),
 });
 
 const { url } = await startStandaloneServer(server, {

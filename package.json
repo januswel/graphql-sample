@@ -28,6 +28,9 @@
   },
   "dependencies": {
     "@apollo/server": "^4.7.5",
+    "@graphql-tools/graphql-file-loader": "^8.0.0",
+    "@graphql-tools/load": "^8.0.0",
+    "@graphql-tools/schema": "^10.0.0",
     "graphql": "^16.7.1"
   }
 }
