@@ -1,0 +1,45 @@
+{
+  "compilerOptions": {
+    "incremental": true,
+    "composite": true,
+    "target": "es2022",
+    "lib": ["ES2022"],
+    "moduleDetection": "auto",
+
+    /* Modules */
+    "module": "commonjs",
+    "rootDir": "./src",
+    "moduleResolution": "node16",
+    "baseUrl": "./",
+    "resolveJsonModule": true,
+
+    /* Emit */
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "removeComments": true,
+    "importHelpers": true,
+    "noEmitOnError": true,
+
+    /* Interop Constraints */
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+
+    /* Type Checking */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true /* Enforces using indexed accessors for keys declared using an indexed type. */,
+
+    /* Completeness */
+    "skipLibCheck": true
+  }
+}
