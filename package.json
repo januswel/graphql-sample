@@ -1,0 +1,12 @@
+{
+  "name": "graphql-sample",
+  "description": "a study for GraphQL",
+  "author": "Takagi Kensuke <janus.wel.3@gmail.com>",
+  "version": "0.0.0",
+  "license": "Apache-2.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": []
+}
