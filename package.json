@@ -10,11 +10,15 @@
   },
   "scripts": {
     "dev": "tsc-watch --noClear --onSuccess \"node dist/index.js\"",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "graphql:codegen": "graphql-codegen --config graphql/codegen.ts"
   },
   "keywords": [],
   "type": "module",
   "devDependencies": {
+    "@graphql-codegen/cli": "4.0.1",
+    "@graphql-codegen/typescript": "4.0.1",
+    "@graphql-codegen/typescript-resolvers": "4.0.1",
     "@typescript-eslint/parser": "^5.60.1",
     "eslint": "^8.44.0",
     "eslint-config-prettier": "^8.8.0",
