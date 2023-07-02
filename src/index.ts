@@ -8,7 +8,7 @@ import { fileURLToPath } from "url";
 
 const dirName = path.dirname(fileURLToPath(import.meta.url));
 const schemaPath = path.normalize(
-  path.join(dirName + "/../src/schema.graphql")
+  path.join(dirName + "/../graphql/schema.graphql")
 );
 console.log(`load schema from ${schemaPath}`);
 const schema = loadSchemaSync(schemaPath, {
