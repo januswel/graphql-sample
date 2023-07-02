@@ -7,7 +7,7 @@
     "moduleDetection": "auto",
 
     /* Modules */
-    "module": "ES2022",
+    "module": "node16",
     "rootDir": "./src",
     "moduleResolution": "node16",
     "baseUrl": "./",
@@ -41,5 +41,8 @@
     /* Completeness */
     "skipLibCheck": true
   },
-  "include": ["./src/**/*"]
+  "include": ["./src/**/*"],
+  "ts-node": {
+    "esm": true
+  }
 }

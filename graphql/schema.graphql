@@ -1,8 +1,14 @@
-type Book {
-  title: String
-  author: String
+scalar DateTime
+
+type Todo {
+  id: ID!
+  title: String!
+  isDone: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
 }
 
 type Query {
-  books: [Book]
+  getTodos: [Todo]!
+  getTodoById(id: ID!): Todo
 }

@@ -8,9 +8,9 @@ generator client {
 }
 
 model todo {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   title     String
-  inDone    Boolean  @default(false)
+  isDone    Boolean  @default(false)
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime @default(now()) @updatedAt
 }
