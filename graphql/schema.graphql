@@ -5,7 +5,7 @@ scalar DateTime
 type Todo {
   id: ID!
   title: String!
-  isDone: Boolean!
+  isCompleted: Boolean!
   createdAt: DateTime!
   updatedAt: DateTime!
 }
@@ -21,7 +21,7 @@ input AddTodoInput {
 
 input UpdateTodoInput {
   title: String
-  isDone: Boolean
+  isCompleted: Boolean
 }
 
 type Mutation {

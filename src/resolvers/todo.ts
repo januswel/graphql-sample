@@ -37,7 +37,7 @@ const getUncompletedTodos: QueryResolvers["getUncompletedTodos"] = async (
   _info
 ) => {
   const result = await prisma.todo.findMany({
-    where: { isDone: false },
+    where: { isCompleted: false },
   });
 
   return result;
@@ -76,7 +76,7 @@ const updateTodo: MutationResolvers["updateTodo"] = async (
     where: { id: args.id },
     data: {
       title: args.input.title || undefined,
-      isDone: args.input.isDone || undefined,
+      isCompleted: args.input.isCompleted || undefined,
     },
   });
 
