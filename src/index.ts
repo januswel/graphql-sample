@@ -2,11 +2,11 @@ import { ApolloServer } from "@apollo/server";
 import { startStandaloneServer } from "@apollo/server/standalone";
 
 import { resolvers } from "./resolvers/index.js";
-import { typeDefs } from "./type-defs.js";
+import { schema } from "./schema.js";
+import { addResolversToSchema } from "@graphql-tools/schema";
 
 const server = new ApolloServer({
-  typeDefs,
-  resolvers,
+  schema: addResolversToSchema({ schema, resolvers }),
 });
 
 const { url } = await startStandaloneServer(server, {

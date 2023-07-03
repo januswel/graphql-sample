@@ -1,3 +1,5 @@
+# from graphql-scalars
+# https://github.com/Urigo/graphql-scalars/blob/master/src/scalars/iso-date/DateTime.ts
 scalar DateTime
 
 type Todo {
