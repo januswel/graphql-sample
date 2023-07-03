@@ -9,8 +9,8 @@ type Todo {
 }
 
 type Query {
-  getTodos: [Todo]!
   getTodoById(id: ID!): Todo
+  getUncompletedTodos: [Todo]!
 }
 
 input AddTodoInput {

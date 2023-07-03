@@ -28,16 +28,14 @@ export const getTodoById: QueryResolvers["getTodoById"] = async (
   return result;
 };
 
-export const getTodos: QueryResolvers["getTodos"] = async (
-  _parent,
-  _args,
-  _context,
-  _info
-) => {
-  const todos = await prisma.todo.findMany();
+export const getUncompletedTodos: QueryResolvers["getUncompletedTodos"] =
+  async (_parent, _args, _context, _info) => {
+    const result = await prisma.todo.findMany({
+      where: { isDone: false },
+    });
 
-  return todos;
-};
+    return result;
+  };
 
 export const addTodo: MutationResolvers["addTodo"] = async (
   _parent,
@@ -45,13 +43,13 @@ export const addTodo: MutationResolvers["addTodo"] = async (
   _context,
   _info
 ) => {
-  const todo = await prisma.todo.create({
+  const result = await prisma.todo.create({
     data: {
       title: args.input.title,
     },
   });
 
-  return todo;
+  return result;
 };
 
 export const updateTodo: MutationResolvers["updateTodo"] = async (
@@ -62,7 +60,7 @@ export const updateTodo: MutationResolvers["updateTodo"] = async (
 ) => {
   await existenceCheck(args.id);
 
-  const todo = await prisma.todo.update({
+  const result = await prisma.todo.update({
     where: { id: args.id },
     data: {
       title: args.input.title || undefined,
@@ -70,7 +68,7 @@ export const updateTodo: MutationResolvers["updateTodo"] = async (
     },
   });
 
-  return todo;
+  return result;
 };
 
 export const deleteTodo: MutationResolvers["deleteTodo"] = async (
@@ -81,9 +79,9 @@ export const deleteTodo: MutationResolvers["deleteTodo"] = async (
 ) => {
   await existenceCheck(args.id);
 
-  const todo = await prisma.todo.delete({
+  const result = await prisma.todo.delete({
     where: { id: args.id },
   });
 
-  return todo;
+  return result;
 };

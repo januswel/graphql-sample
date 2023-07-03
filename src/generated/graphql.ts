@@ -47,7 +47,7 @@ export type MutationUpdateTodoArgs = {
 export type Query = {
   __typename?: 'Query';
   getTodoById?: Maybe<Todo>;
-  getTodos: Array<Maybe<Todo>>;
+  getUncompletedTodos: Array<Maybe<Todo>>;
 };
 
 
@@ -176,7 +176,7 @@ export type MutationResolvers<ContextType = any, ParentType extends ResolversPar
 
 export type QueryResolvers<ContextType = any, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
   getTodoById?: Resolver<Maybe<ResolversTypes['Todo']>, ParentType, ContextType, RequireFields<QueryGetTodoByIdArgs, 'id'>>;
-  getTodos?: Resolver<Array<Maybe<ResolversTypes['Todo']>>, ParentType, ContextType>;
+  getUncompletedTodos?: Resolver<Array<Maybe<ResolversTypes['Todo']>>, ParentType, ContextType>;
 };
 
 export type TodoResolvers<ContextType = any, ParentType extends ResolversParentTypes['Todo'] = ResolversParentTypes['Todo']> = {

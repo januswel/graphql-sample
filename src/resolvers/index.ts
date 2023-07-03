@@ -1,7 +1,7 @@
 import { DateTimeResolver } from "graphql-scalars";
 import {
   getTodoById,
-  getTodos,
+  getUncompletedTodos,
   addTodo,
   updateTodo,
   deleteTodo,
@@ -11,7 +11,7 @@ export const resolvers = {
   DateTime: DateTimeResolver,
   Query: {
     getTodoById,
-    getTodos,
+    getUncompletedTodos,
   },
   Mutation: {
     addTodo,
