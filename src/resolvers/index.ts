@@ -1,12 +1,11 @@
 import { DateTimeResolver } from "graphql-scalars";
-import * as Todo from "./todo.js";
+import * as Query from "./queries.js";
+import * as Mutation from "./mutations.js";
+import { TodoResolver } from "./todo.js";
 
 export const resolvers = {
   DateTime: DateTimeResolver,
-  Query: {
-    ...Todo.queries,
-  },
-  Mutation: {
-    ...Todo.mutations,
-  },
+  Query,
+  Mutation,
+  Todo: TodoResolver,
 };

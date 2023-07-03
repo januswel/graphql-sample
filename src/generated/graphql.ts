@@ -59,6 +59,7 @@ export type Todo = {
   __typename?: 'Todo';
   createdAt: Scalars['DateTime']['output'];
   id: Scalars['ID']['output'];
+  isAbandoned: Scalars['Boolean']['output'];
   isCompleted: Scalars['Boolean']['output'];
   title: Scalars['String']['output'];
   updatedAt: Scalars['DateTime']['output'];
@@ -182,6 +183,7 @@ export type QueryResolvers<ContextType = any, ParentType extends ResolversParent
 export type TodoResolvers<ContextType = any, ParentType extends ResolversParentTypes['Todo'] = ResolversParentTypes['Todo']> = {
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  isAbandoned?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   isCompleted?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;

@@ -6,6 +6,7 @@ type Todo {
   id: ID!
   title: String!
   isCompleted: Boolean!
+  isAbandoned: Boolean!
   createdAt: DateTime!
   updatedAt: DateTime!
 }
