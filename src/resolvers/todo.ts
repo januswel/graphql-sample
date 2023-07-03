@@ -5,6 +5,7 @@ import type {
 } from "../generated/graphql.js";
 import { prisma } from "../prisma.js";
 
+// util
 async function existenceCheck(id: string): Promise<Todo> {
   const target = await prisma.todo.findUnique({
     where: { id },
@@ -17,7 +18,8 @@ async function existenceCheck(id: string): Promise<Todo> {
   return target;
 }
 
-export const getTodoById: QueryResolvers["getTodoById"] = async (
+// queries
+const getTodoById: QueryResolvers["getTodoById"] = async (
   _parent,
   args,
   _context,
@@ -28,16 +30,26 @@ export const getTodoById: QueryResolvers["getTodoById"] = async (
   return result;
 };
 
-export const getUncompletedTodos: QueryResolvers["getUncompletedTodos"] =
-  async (_parent, _args, _context, _info) => {
-    const result = await prisma.todo.findMany({
-      where: { isDone: false },
-    });
+const getUncompletedTodos: QueryResolvers["getUncompletedTodos"] = async (
+  _parent,
+  _args,
+  _context,
+  _info
+) => {
+  const result = await prisma.todo.findMany({
+    where: { isDone: false },
+  });
 
-    return result;
-  };
+  return result;
+};
 
-export const addTodo: MutationResolvers["addTodo"] = async (
+export const queries = {
+  getTodoById,
+  getUncompletedTodos,
+};
+
+// mutations
+const addTodo: MutationResolvers["addTodo"] = async (
   _parent,
   args,
   _context,
@@ -52,7 +64,7 @@ export const addTodo: MutationResolvers["addTodo"] = async (
   return result;
 };
 
-export const updateTodo: MutationResolvers["updateTodo"] = async (
+const updateTodo: MutationResolvers["updateTodo"] = async (
   _parent,
   args,
   _context,
@@ -71,7 +83,7 @@ export const updateTodo: MutationResolvers["updateTodo"] = async (
   return result;
 };
 
-export const deleteTodo: MutationResolvers["deleteTodo"] = async (
+const deleteTodo: MutationResolvers["deleteTodo"] = async (
   _parent,
   args,
   _context,
@@ -84,4 +96,10 @@ export const deleteTodo: MutationResolvers["deleteTodo"] = async (
   });
 
   return result;
+};
+
+export const mutations = {
+  addTodo,
+  updateTodo,
+  deleteTodo,
 };
