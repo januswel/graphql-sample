@@ -4,6 +4,17 @@
   "author": "Takagi Kensuke <janus.wel.3@gmail.com>",
   "version": "0.0.0",
   "license": "Apache-2.0",
+  "keywords": [
+    "GraphQL",
+    "Prisma",
+    "Apollo Server",
+    "Clean Architecture",
+    "DDD",
+    "Todo App",
+    "Sample",
+    "TypeScript"
+  ],
+  "private": true,
   "packageManager": "npm@9.7.2+sha1.95fdbba1b3b8e918f253cac1a45b38655f324ed5",
   "engines": {
     "node": "18.16.1"
@@ -19,7 +30,6 @@
     "db:drop": "ts-node prisma/bin/drop.ts",
     "db:trancate": "ts-node prisma/bin/trancate.ts"
   },
-  "keywords": [],
   "type": "module",
   "devDependencies": {
     "@graphql-codegen/cli": "4.0.1",
