@@ -1,9 +1,9 @@
 import { ApolloServer } from "@apollo/server";
 import { startStandaloneServer } from "@apollo/server/standalone";
-
-import { resolvers } from "./resolvers/index.js";
-import { schema } from "./schema.js";
 import { addResolversToSchema } from "@graphql-tools/schema";
+
+import { schema } from "./schema.js";
+import { resolvers } from "./resolvers.js";
 
 const server = new ApolloServer({
   schema: addResolversToSchema({ schema, resolvers }),
