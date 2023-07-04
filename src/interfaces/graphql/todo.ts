@@ -5,7 +5,7 @@ import type {
   QueryGetTodoByIdArgs,
   ResolversParentTypes,
   TodoResolvers,
-} from "../../generated/graphql.js";
+} from "./generated.js";
 import * as Todo from "../../entities/todo.js";
 import { TodoRepository } from "src/interfaces/database/todo.js";
 
