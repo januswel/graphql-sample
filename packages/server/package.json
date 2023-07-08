@@ -1,0 +1,66 @@
+{
+  "name": "graphql-sample",
+  "description": "a study for GraphQL",
+  "author": "Takagi Kensuke <janus.wel.3@gmail.com>",
+  "version": "0.0.0",
+  "license": "Apache-2.0",
+  "keywords": [
+    "GraphQL",
+    "Prisma",
+    "Apollo Server",
+    "Clean Architecture",
+    "DDD",
+    "Todo App",
+    "Sample",
+    "TypeScript"
+  ],
+  "private": true,
+  "engines": {
+    "node": "18.16.1"
+  },
+  "scripts": {
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "dev": "tsc-watch --onSuccess \"node dist/index.js\"",
+    "predev": "npm run clean",
+    "test": "NODE_OPTIONS=--experimental-vm-modules npx jest --coverage",
+    "graphql:codegen": "graphql-codegen --config graphql/codegen.ts",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "ts-node prisma/bin/seed.ts",
+    "db:drop": "ts-node prisma/bin/drop.ts",
+    "db:trancate": "ts-node prisma/bin/trancate.ts"
+  },
+  "type": "module",
+  "devDependencies": {
+    "@graphql-codegen/cli": "4.0.1",
+    "@graphql-codegen/typescript": "4.0.1",
+    "@graphql-codegen/typescript-resolvers": "4.0.1",
+    "@types/jest": "^29.5.2",
+    "@typescript-eslint/parser": "^5.60.1",
+    "eslint": "^8.44.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-config-standard-with-typescript": "^36.0.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-n": "^15.7.0",
+    "eslint-plugin-promise": "^6.1.1",
+    "jest": "^29.5.0",
+    "prettier": "^2.8.8",
+    "ts-jest": "^29.1.1",
+    "ts-node": "^10.9.1",
+    "ts-node-dev": "^2.0.0",
+    "tsc-watch": "^6.0.4",
+    "typescript": "^5.1.6"
+  },
+  "dependencies": {
+    "@apollo/server": "^4.7.5",
+    "@graphql-tools/graphql-file-loader": "^8.0.0",
+    "@graphql-tools/load": "^8.0.0",
+    "@graphql-tools/schema": "^10.0.0",
+    "@prisma/client": "^4.16.2",
+    "graphql": "^16.7.1",
+    "graphql-scalars": "^1.22.2",
+    "prisma": "^4.16.2"
+  },
+  "prisma": {
+    "seed": "npm run db:seed"
+  }
+}
