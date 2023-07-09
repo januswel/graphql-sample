@@ -1,5 +1,6 @@
+import { PrismaClient } from "@prisma/client";
 import { Entity } from "../../entities/todo.js";
-import { prisma } from "./prisma.js";
+import { prismaClientFactory } from "./prisma.js";
 
 export interface CreateTodoArgs {
   title: string;
@@ -23,14 +24,14 @@ export interface TodoRepository {
   deleteTodo(args: DeleteTodoArgs): Promise<Entity>;
 }
 
-async function getUncompletedTodos() {
+async function getUncompletedTodos(prisma: PrismaClient) {
   const todos = await prisma.todo.findMany({
     where: { isCompleted: false },
   });
   return todos;
 }
 
-async function getTodoById(id: string) {
+async function getTodoById(prisma: PrismaClient, id: string) {
   const todo = await prisma.todo.findUnique({
     where: { id },
   });
@@ -42,7 +43,7 @@ async function getTodoById(id: string) {
   return todo;
 }
 
-async function createTodo(args: CreateTodoArgs) {
+async function createTodo(prisma: PrismaClient, args: CreateTodoArgs) {
   const todo = await prisma.todo.create({
     data: {
       title: args.title,
@@ -51,8 +52,8 @@ async function createTodo(args: CreateTodoArgs) {
   return todo;
 }
 
-async function updateTodo(args: UpdateTodoArgs) {
-  getTodoById(args.id);
+async function updateTodo(prisma: PrismaClient, args: UpdateTodoArgs) {
+  getTodoById(prisma, args.id);
 
   const todo = await prisma.todo.update({
     where: { id: args.id },
@@ -64,8 +65,8 @@ async function updateTodo(args: UpdateTodoArgs) {
   return todo;
 }
 
-async function deleteTodo(args: DeleteTodoArgs) {
-  getTodoById(args.id);
+async function deleteTodo(prisma: PrismaClient, args: DeleteTodoArgs) {
+  getTodoById(prisma, args.id);
 
   const todo = await prisma.todo.delete({
     where: { id: args.id },
@@ -73,12 +74,13 @@ async function deleteTodo(args: DeleteTodoArgs) {
   return todo;
 }
 
-export function todoRepositoryFactory(): TodoRepository {
+export function todoRepositoryFactory(databaseUrl: string): TodoRepository {
+  const prismaClient = prismaClientFactory(databaseUrl);
   return {
-    getUncompletedTodos,
-    getTodoById,
-    createTodo,
-    updateTodo,
-    deleteTodo,
+    getUncompletedTodos: () => getUncompletedTodos(prismaClient),
+    getTodoById: (id) => getTodoById(prismaClient, id),
+    createTodo: (args) => createTodo(prismaClient, args),
+    updateTodo: (args) => updateTodo(prismaClient, args),
+    deleteTodo: (args) => deleteTodo(prismaClient, args),
   };
 }

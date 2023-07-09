@@ -1,3 +1,15 @@
 import { PrismaClient } from "@prisma/client";
 
-export const prisma = new PrismaClient();
+export function prismaClientFactory(databaseUrl: string) {
+  if (process.env["AWS_REGION"]) {
+    return new PrismaClient({
+      datasources: {
+        db: {
+          url: databaseUrl,
+        },
+      },
+    });
+  }
+
+  return new PrismaClient();
+}

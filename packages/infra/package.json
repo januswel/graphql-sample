@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@as-integrations/aws-lambda": "^2.0.1",
+    "@aws-sdk/client-secrets-manager": "^3.363.0",
     "aws-cdk-lib": "2.87.0",
     "constructs": "^10.0.0",
     "source-map-support": "^0.5.21"
