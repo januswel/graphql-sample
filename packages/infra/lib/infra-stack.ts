@@ -1,74 +1,128 @@
 import * as cdk from "aws-cdk-lib";
 import {
+  aws_apigateway as ApiGateway,
   aws_ec2 as Ec2,
-  aws_rds as Rds,
   aws_iam as Iam,
   aws_lambda as Lambda,
   aws_lambda_nodejs as LambdaNodejs,
-  aws_apigateway as ApiGateway,
+  aws_rds as Rds,
+  aws_secretsmanager as SecretsManager,
 } from "aws-cdk-lib";
 import { Construct } from "constructs";
-import * as path from "path";
 
 export class InfraStack extends cdk.Stack {
+  public readonly vpc: Ec2.IVpc;
+  public readonly bastionSecurityGroup: Ec2.SecurityGroup;
+
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
     const VPC_CIDR = "10.0.0.0/16";
-    const postgresVersion = Rds.AuroraPostgresEngineVersion.VER_15_2;
-    const databaseUsername = "postgres";
-    const databaseCredentials =
-      Rds.Credentials.fromGeneratedSecret(databaseUsername);
-    const databasePort = 5432;
-    const databaseParameter = {
+    const DATABASE_VERSION = Rds.AuroraPostgresEngineVersion.VER_15_2;
+    const DATABASE_USERNAME = "postgres";
+    const DATABASE_PORT = 5432;
+    const DATABASE_PARAMETERS = {
       "pgaudit.log": "all",
       "pgaudit.role": "rds_pgaudit",
       shared_preload_libraries: "pgaudit",
       timezone: "Asia/Tokyo",
     };
+    const SECRET_EXCLUDE_CHARACTERS = "!\"#$%&'()*+,/:;<=>?@[\\]^`{|}.-_~";
 
-    const vpc = new Ec2.Vpc(this, "Vpc", {
+    const databaseSecret = new SecretsManager.Secret(this, "DatabaseSecret", {
+      secretName: "DatabaseSecret",
+      generateSecretString: {
+        excludeCharacters: SECRET_EXCLUDE_CHARACTERS,
+        excludePunctuation: true,
+        generateStringKey: "password",
+        includeSpace: false,
+        passwordLength: 32,
+        requireEachIncludedType: true,
+        secretStringTemplate: JSON.stringify({
+          username: DATABASE_USERNAME,
+        }),
+      },
+    });
+
+    const vpc = new Ec2.Vpc(this, "ApolloServerVPC", {
       ipAddresses: Ec2.IpAddresses.cidr(VPC_CIDR),
       maxAzs: 3,
       enableDnsSupport: true,
       subnetConfiguration: [
         {
-          name: "Private",
+          name: "PrivateIsolated",
           subnetType: Ec2.SubnetType.PRIVATE_ISOLATED,
           cidrMask: 24,
         },
       ],
     });
+    this.vpc = vpc;
+    this.exportValue(vpc.vpcId);
+    const subnets = vpc.selectSubnets({
+      subnetType: Ec2.SubnetType.PRIVATE_ISOLATED,
+    });
 
     new Ec2.InterfaceVpcEndpoint(this, "SecretsManagerVpcEndpoint", {
       vpc,
+      subnets,
       service: Ec2.InterfaceVpcEndpointAwsService.SECRETS_MANAGER,
-      subnets: vpc.selectSubnets({
-        subnetType: Ec2.SubnetType.PRIVATE_ISOLATED,
-      }),
     });
 
-    const appSecurityGroup = new Ec2.SecurityGroup(this, "AppSecurityGroup", {
-      vpc,
-      securityGroupName: "AppSecurityGroup",
-      description: "Allow inbound traffic to the app",
-      allowAllOutbound: true,
-    });
-
+    const apolloServerSecurityGroup = new Ec2.SecurityGroup(
+      this,
+      "ApolloServerSecurityGroup",
+      {
+        vpc,
+        securityGroupName: "ApolloServerSecurityGroup",
+        description: "Allow outbound traffic from the Apollo Server",
+        allowAllOutbound: true,
+      }
+    );
+    const secretRotatorSecurityGroupt = new Ec2.SecurityGroup(
+      this,
+      "SecretRotatorSecurityGroup",
+      {
+        vpc,
+        securityGroupName: "SecretRotatorSecurityGroup",
+        description: "Allow outbound traffic from the secret rotator",
+        allowAllOutbound: true,
+      }
+    );
+    const bastionSecurityGroup = new Ec2.SecurityGroup(
+      this,
+      "BastionSecurityGroup",
+      {
+        vpc,
+        securityGroupName: "BastionSecurityGroup",
+        allowAllOutbound: true,
+      }
+    );
+    this.bastionSecurityGroup = bastionSecurityGroup;
+    this.exportValue(bastionSecurityGroup.securityGroupId);
     const databaseSecurityGroup = new Ec2.SecurityGroup(
       this,
       "DatabaseSecurityGroup",
       {
         vpc,
         securityGroupName: "DatabaseSecurityGroup",
-        description: "Allow inbound traffic to the database",
+        description: "Allow outbound traffic from the database",
         allowAllOutbound: true,
       }
     );
     databaseSecurityGroup.addIngressRule(
-      Ec2.Peer.securityGroupId(appSecurityGroup.securityGroupId),
-      Ec2.Port.tcp(databasePort),
-      "Allow inbound traffic from the app"
+      Ec2.Peer.securityGroupId(apolloServerSecurityGroup.securityGroupId),
+      Ec2.Port.tcp(DATABASE_PORT),
+      "Allow inbound traffic from the Apollo Server"
+    );
+    databaseSecurityGroup.addIngressRule(
+      Ec2.Peer.securityGroupId(secretRotatorSecurityGroupt.securityGroupId),
+      Ec2.Port.tcp(DATABASE_PORT),
+      "Allow inbound traffic from the secret rotator"
+    );
+    databaseSecurityGroup.addIngressRule(
+      bastionSecurityGroup,
+      Ec2.Port.tcp(5432),
+      "Allow PostgreSQL access from bastion"
     );
 
     const databaseClusterParameterGroup = new Rds.ParameterGroup(
@@ -76,37 +130,34 @@ export class InfraStack extends cdk.Stack {
       "DatabaseClusterParameterGroup",
       {
         engine: Rds.DatabaseClusterEngine.auroraPostgres({
-          version: Rds.AuroraPostgresEngineVersion.VER_15_2,
+          version: DATABASE_VERSION,
         }),
-        parameters: databaseParameter,
+        parameters: DATABASE_PARAMETERS,
       }
     );
 
-    const subnetGroup = new Rds.SubnetGroup(this, "SubnetGroup", {
+    const subnetGroup = new Rds.SubnetGroup(this, "IsolatedSubnetGroup", {
       vpc,
-      subnetGroupName: "SubnetGroup",
-      description: "Subnet group",
+      subnetGroupName: "IsolatedSubnetGroup",
+      description: "Isolated Subnet group",
       vpcSubnets: {
         onePerAz: true,
         subnetType: Ec2.SubnetType.PRIVATE_ISOLATED,
       },
     });
 
-    const serverlessDatabaseCluster = new Rds.DatabaseCluster(
+    const auroraServerlessDatabaseCluster = new Rds.DatabaseCluster(
       this,
-      "ServerlessCluster",
+      "AuroraServerlessCluster",
       {
+        clusterIdentifier: "AuroraServerlessCluster",
         engine: Rds.DatabaseClusterEngine.auroraPostgres({
-          version: postgresVersion,
+          version: DATABASE_VERSION,
         }),
-        vpc,
-        subnetGroup,
+        credentials: Rds.Credentials.fromSecret(databaseSecret),
         parameterGroup: databaseClusterParameterGroup,
-        securityGroups: [databaseSecurityGroup],
-        credentials: databaseCredentials,
-        clusterIdentifier: "serverless-cluster",
-        serverlessV2MaxCapacity: 2,
-        serverlessV2MinCapacity: 1,
+        serverlessV2MaxCapacity: 1,
+        serverlessV2MinCapacity: 0.5,
         writer: Rds.ClusterInstance.serverlessV2("writer", {
           scaleWithWriter: true,
         }),
@@ -116,23 +167,36 @@ export class InfraStack extends cdk.Stack {
           }),
           Rds.ClusterInstance.serverlessV2("reader2"),
         ],
+        vpc,
+        subnetGroup,
+        securityGroups: [databaseSecurityGroup],
+      }
+    );
+    auroraServerlessDatabaseCluster.addRotationSingleUser({
+      automaticallyAfter: cdk.Duration.days(3),
+      excludeCharacters: SECRET_EXCLUDE_CHARACTERS,
+      securityGroup: secretRotatorSecurityGroupt,
+      vpcSubnets: subnets,
+    });
+
+    const apolloServerIamPolicy = new Iam.ManagedPolicy(
+      this,
+      "ApolloServerIamPolicy",
+      {
+        managedPolicyName: "ApolloServerIamPolicy",
+        statements: [
+          new Iam.PolicyStatement({
+            effect: Iam.Effect.ALLOW,
+            actions: ["secretsmanager:GetSecretValue"],
+            resources: [auroraServerlessDatabaseCluster.secret?.secretArn!],
+          }),
+        ],
       }
     );
 
-    const appIamPolicy = new Iam.ManagedPolicy(this, "AppIamPolicy", {
-      managedPolicyName: "AppIamPolicy",
-      statements: [
-        new Iam.PolicyStatement({
-          effect: Iam.Effect.ALLOW,
-          actions: ["secretsmanager:GetSecretValue"],
-          resources: [serverlessDatabaseCluster.secret?.secretArn!],
-        }),
-      ],
-    });
-
-    const appIamRole = new Iam.Role(this, "AppIamRole", {
+    const apolloServerIamRole = new Iam.Role(this, "ApolloServerIamRole", {
       assumedBy: new Iam.ServicePrincipal("lambda.amazonaws.com"),
-      roleName: "AppIamRole",
+      roleName: "ApolloServerIamRole",
       managedPolicies: [
         Iam.ManagedPolicy.fromAwsManagedPolicyName(
           "service-role/AWSLambdaBasicExecutionRole"
@@ -140,25 +204,23 @@ export class InfraStack extends cdk.Stack {
         Iam.ManagedPolicy.fromAwsManagedPolicyName(
           "service-role/AWSLambdaVPCAccessExecutionRole"
         ),
-        appIamPolicy,
+        apolloServerIamPolicy,
       ],
     });
 
-    const lambda = new LambdaNodejs.NodejsFunction(this, "AppLambdaFunction", {
-      functionName: "AppLambdaFunction",
+    const lambda = new LambdaNodejs.NodejsFunction(this, "Lambda", {
+      functionName: "ApolloServer",
       runtime: Lambda.Runtime.NODEJS_18_X,
       entry: "src/index.ts",
       handler: "handler",
-      timeout: cdk.Duration.seconds(15),
-      role: appIamRole,
-      securityGroups: [appSecurityGroup],
-      vpc,
-      vpcSubnets: vpc.selectSubnets({
-        subnetType: Ec2.SubnetType.PRIVATE_ISOLATED,
-      }),
+      timeout: cdk.Duration.seconds(10),
       environment: {
-        SECRET_ID: serverlessDatabaseCluster.secret?.secretArn!,
+        SECRET_ID: auroraServerlessDatabaseCluster.secret?.secretArn!,
       },
+      role: apolloServerIamRole,
+      vpc,
+      vpcSubnets: subnets,
+      securityGroups: [apolloServerSecurityGroup],
       bundling: {
         target: "node18",
         minify: true,
@@ -185,11 +247,10 @@ export class InfraStack extends cdk.Stack {
       },
     });
 
-    const api = new ApiGateway.RestApi(this, "Api", {
-      restApiName: "Api",
-      description: "Api",
+    const apiGateway = new ApiGateway.RestApi(this, "ApiGateway", {
+      restApiName: "ApolloServer",
     });
-    api.root.addMethod("POST", new ApiGateway.LambdaIntegration(lambda));
-    api.root.addMethod("GET", new ApiGateway.LambdaIntegration(lambda));
+    apiGateway.root.addMethod("POST", new ApiGateway.LambdaIntegration(lambda));
+    apiGateway.root.addMethod("GET", new ApiGateway.LambdaIntegration(lambda));
   }
 }
