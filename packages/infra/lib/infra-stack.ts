@@ -224,10 +224,6 @@ export class InfraStack extends cdk.Stack {
       bundling: {
         target: "node18",
         minify: true,
-        sourceMap: true,
-        environment: {
-          NODE_OPTIONS: "--enable-source-maps",
-        },
         commandHooks: {
           beforeBundling(inputDir: string, outputDir: string): string[] {
             return [];
