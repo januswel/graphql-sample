@@ -2,7 +2,6 @@ export interface Entity {
   id: string;
   title: string;
   isCompleted: boolean;
-  isAbandoned?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
