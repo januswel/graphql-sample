@@ -7,6 +7,7 @@ import {
   aws_lambda_nodejs as LambdaNodejs,
   aws_rds as Rds,
   aws_secretsmanager as SecretsManager,
+  aws_logs as Logs,
 } from "aws-cdk-lib";
 import { Construct } from "constructs";
 
@@ -27,13 +28,12 @@ export class InfraStack extends cdk.Stack {
       shared_preload_libraries: "pgaudit",
       timezone: "Asia/Tokyo",
     };
-    const SECRET_EXCLUDE_CHARACTERS = "!\"#$%&'()*+,/:;<=>?@[\\]^`{|}.-_~";
+    const SECRET_EXCLUDE_CHARACTERS = ":@/\\ \"'";
 
     const databaseSecret = new SecretsManager.Secret(this, "DatabaseSecret", {
       secretName: "DatabaseSecret",
       generateSecretString: {
         excludeCharacters: SECRET_EXCLUDE_CHARACTERS,
-        excludePunctuation: true,
         generateStringKey: "password",
         includeSpace: false,
         passwordLength: 32,
@@ -78,7 +78,7 @@ export class InfraStack extends cdk.Stack {
         allowAllOutbound: true,
       }
     );
-    const secretRotatorSecurityGroupt = new Ec2.SecurityGroup(
+    const secretRotatorSecurityGroup = new Ec2.SecurityGroup(
       this,
       "SecretRotatorSecurityGroup",
       {
@@ -115,7 +115,7 @@ export class InfraStack extends cdk.Stack {
       "Allow inbound traffic from the Apollo Server"
     );
     databaseSecurityGroup.addIngressRule(
-      Ec2.Peer.securityGroupId(secretRotatorSecurityGroupt.securityGroupId),
+      Ec2.Peer.securityGroupId(secretRotatorSecurityGroup.securityGroupId),
       Ec2.Port.tcp(DATABASE_PORT),
       "Allow inbound traffic from the secret rotator"
     );
@@ -148,9 +148,9 @@ export class InfraStack extends cdk.Stack {
 
     const auroraServerlessDatabaseCluster = new Rds.DatabaseCluster(
       this,
-      "AuroraServerlessCluster",
+      "GraphQLDatabase",
       {
-        clusterIdentifier: "AuroraServerlessCluster",
+        clusterIdentifier: "GraphQLDatabase",
         engine: Rds.DatabaseClusterEngine.auroraPostgres({
           version: DATABASE_VERSION,
         }),
@@ -158,25 +158,36 @@ export class InfraStack extends cdk.Stack {
         parameterGroup: databaseClusterParameterGroup,
         serverlessV2MaxCapacity: 1,
         serverlessV2MinCapacity: 0.5,
-        writer: Rds.ClusterInstance.serverlessV2("writer", {
-          scaleWithWriter: true,
-        }),
+        writer: Rds.ClusterInstance.serverlessV2("writer", {}),
         readers: [
-          Rds.ClusterInstance.serverlessV2("reader1", {
+          Rds.ClusterInstance.serverlessV2("reader", {
             scaleWithWriter: true,
           }),
-          Rds.ClusterInstance.serverlessV2("reader2"),
         ],
         vpc,
         subnetGroup,
         securityGroups: [databaseSecurityGroup],
+        monitoringInterval: cdk.Duration.minutes(1),
+        storageEncrypted: true,
+        deletionProtection: false,
+        cloudwatchLogsExports: ["postgresql"],
+        cloudwatchLogsRetention: Logs.RetentionDays.ONE_YEAR,
+        backup: {
+          retention: cdk.Duration.days(7),
+          preferredWindow: "03:00-04:00",
+        },
       }
     );
-    auroraServerlessDatabaseCluster.addRotationSingleUser({
+    new SecretsManager.SecretRotation(this, "SecretRotation", {
+      target: auroraServerlessDatabaseCluster,
+      secret: databaseSecret,
       automaticallyAfter: cdk.Duration.days(3),
-      excludeCharacters: SECRET_EXCLUDE_CHARACTERS,
-      securityGroup: secretRotatorSecurityGroupt,
+      application:
+        SecretsManager.SecretRotationApplication.POSTGRES_ROTATION_SINGLE_USER,
+      vpc,
       vpcSubnets: subnets,
+      excludeCharacters: SECRET_EXCLUDE_CHARACTERS,
+      securityGroup: secretRotatorSecurityGroup,
     });
 
     const apolloServerIamPolicy = new Iam.ManagedPolicy(
@@ -221,6 +232,8 @@ export class InfraStack extends cdk.Stack {
       vpc,
       vpcSubnets: subnets,
       securityGroups: [apolloServerSecurityGroup],
+      logRetention: Logs.RetentionDays.ONE_YEAR,
+      awsSdkConnectionReuse: true,
       bundling: {
         target: "node18",
         minify: true,
